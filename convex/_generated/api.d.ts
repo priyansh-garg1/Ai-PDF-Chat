@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as pdfStorage from "../pdfStorage.js";
 import type * as user from "../user.js";
 
 /**
@@ -24,6 +25,7 @@ import type * as user from "../user.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  pdfStorage: typeof pdfStorage;
   user: typeof user;
 }>;
 export declare const api: FilterApi<
