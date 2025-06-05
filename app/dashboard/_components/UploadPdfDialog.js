@@ -27,6 +27,7 @@ function UploadPdfDialog({ children }) {
 
   const generateUploadUrl = useMutation(api.pdfStorage.generateUploadUrl);
   const addPdfFile = useMutation(api.pdfStorage.AddPdfFile);
+  const getFileUrl = useMutation(api.pdfStorage.getFileUrl);
 
   const onFileSelect = (e) => {
     const selectedFile = e.target.files[0];
@@ -44,12 +45,16 @@ function UploadPdfDialog({ children }) {
       body: file,
     });
     const { storageId } = await result.json();
+    const fileUrl = await getFileUrl({
+      storageId: storageId,
+    });
 
     const fileId = uuid4();
     const response = await addPdfFile({
       fileId: fileId,
       storageId: storageId,
       fileName: fileName || "Untitled PDF",
+      fileUrl: fileUrl,
       createdBy: user?.primaryEmailAddress?.emailAddress,
     });
     console.log(response);
@@ -62,26 +67,33 @@ function UploadPdfDialog({ children }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload PDF File</DialogTitle>
-          <DialogDescription>
-            <div>
-              <h2>Select a PDF file to upload</h2>
-              <div className="flex gap-2 p-3 rounded-xl border">
-                <div className="border p-2 bg-gray-100 rounded-lg">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => onFileSelect(e)}
-                  />
-                </div>
-              </div>
-              <div className="mt-4">
-                <label>File Name </label>
-                <Input placeholder="Enter file name" onChange={(e) => setFileName(e.target.value)} />
+          <DialogDescription>Select a PDF file to upload</DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <h2 className="">Choose a file</h2>
+            <div className="flex gap-2 p-3 rounded-xl border">
+              <div className="border p-2 bg-gray-100 rounded-lg">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={onFileSelect}
+                />
               </div>
             </div>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="sm:justify-end">
+          </div>
+
+          <div>
+            <label className="block mb-1">File Name</label>
+            <Input
+              placeholder="Enter file name"
+              onChange={(e) => setFileName(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="sm:justify-end mt-4">
           <DialogClose asChild>
             <Button type="button" variant="secondary">
               Close
