@@ -40,4 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/convex/myAccount.js
+/convex/myAction.js
