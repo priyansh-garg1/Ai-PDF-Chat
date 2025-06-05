@@ -73,9 +73,11 @@ function UploadPdfDialog({ children }) {
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button onClick={() => setOpen(true)} className="w-full">Upload PDF File</Button>
+        <Button onClick={() => setOpen(true)} className="w-full">
+          Upload PDF File
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -108,11 +110,21 @@ function UploadPdfDialog({ children }) {
 
         <DialogFooter className="sm:justify-end mt-4">
           <DialogClose asChild>
-            <Button type="button" variant="secondary">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={loading}
+              onClick={() => setOpen(false)}
+            >
               Close
             </Button>
           </DialogClose>
-          <Button onClick={onUpload} type="submit" className="ml-2" disabled={!file || loading}>
+          <Button
+            onClick={onUpload}
+            type="submit"
+            className="ml-2"
+            disabled={!file || loading}
+          >
             {loading ? <Loader2Icon className="animate-spin" /> : "Upload"}
           </Button>
         </DialogFooter>

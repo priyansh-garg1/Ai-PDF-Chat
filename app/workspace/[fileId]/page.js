@@ -14,13 +14,6 @@ function Workspace() {
     fileId: fileId,
   });
 
-  useEffect(() => {
-    if (fileInfo) {
-      console.log(fileInfo);
-    }
-  }, [fileInfo]);
-
-
   return (
     <div>
       <WorkspaceHeader />
@@ -30,7 +23,7 @@ function Workspace() {
         </div>
         <div>
           {/* PDF Viewer */}
-          <PdfViewer fileUrl = {fileInfo?.fileUrl}/>
+          <PdfViewer fileUrl = {fileInfo?.fileUrl} />
         </div>
       </div>
     </div>
