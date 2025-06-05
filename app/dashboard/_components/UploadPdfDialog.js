@@ -14,20 +14,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { Loader2Icon } from "lucide-react";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import uuid4 from "uuid4";
 import { useUser } from "@clerk/nextjs";
+import axios from "axios";
 
 function UploadPdfDialog({ children }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [open, setOpen] = useState(false);
 
   const { user } = useUser();
 
   const generateUploadUrl = useMutation(api.pdfStorage.generateUploadUrl);
   const addPdfFile = useMutation(api.pdfStorage.AddPdfFile);
   const getFileUrl = useMutation(api.pdfStorage.getFileUrl);
+  const embeddDocument = useAction(api.myAction.ingest);
 
   const onFileSelect = (e) => {
     const selectedFile = e.target.files[0];
@@ -57,13 +60,23 @@ function UploadPdfDialog({ children }) {
       fileUrl: fileUrl,
       createdBy: user?.primaryEmailAddress?.emailAddress,
     });
-    console.log(response);
+
+    const ApiResponse = await axios.get("/api/pdf-loader?pdfUrl=" + fileUrl);
+    embeddDocument({
+      splitText: ApiResponse.data.result,
+      fileId: fileId,
+    });
+
     setLoading(false);
+    setOpen(false);
+    setFile(null);
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open}>
+      <DialogTrigger asChild>
+        <Button onClick={() => setOpen(true)} className="w-full">Upload PDF File</Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload PDF File</DialogTitle>
@@ -99,7 +112,7 @@ function UploadPdfDialog({ children }) {
               Close
             </Button>
           </DialogClose>
-          <Button onClick={onUpload} type="submit" className="ml-2">
+          <Button onClick={onUpload} type="submit" className="ml-2" disabled={!file || loading}>
             {loading ? <Loader2Icon className="animate-spin" /> : "Upload"}
           </Button>
         </DialogFooter>
