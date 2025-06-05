@@ -5,8 +5,15 @@ import React from "react";
 import EditorExtension from "./EditorExtension";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
-function TextEditor() {
+function TextEditor({fileId}) {
+
+  const notes = useQuery(api.notes.GetNotes,{
+    fileId: fileId,
+  })
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -22,6 +29,14 @@ function TextEditor() {
       },
     },
   });
+
+
+  React.useEffect(() => {
+    if (editor && notes) {
+      editor.commands.setContent(notes);
+    }
+  }, [editor, notes]);
+
   return (
     <div>
       <EditorExtension editor={editor} />

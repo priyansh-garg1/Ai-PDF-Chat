@@ -19,7 +19,7 @@ function Workspace() {
       <WorkspaceHeader fileName={fileInfo?.fileName} />
       <div className="grid grid-cols-2 gap-5">
         <div>{/* Text Editor */}
-            <TextEditor />
+            <TextEditor fileId={fileId}/>
         </div>
         <div>
           {/* PDF Viewer */}

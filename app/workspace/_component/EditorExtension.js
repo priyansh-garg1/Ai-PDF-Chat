@@ -1,6 +1,8 @@
+"use client";
 import { chatSession } from "@/configs/AIModel";
 import { api } from "@/convex/_generated/api";
-import { useAction } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { useAction, useMutation } from "convex/react";
 import {
   AlignCenterIcon,
   AlignLeftIcon,
@@ -22,9 +24,14 @@ import { toast } from "sonner";
 function EditorExtension({ editor }) {
   const { fileId } = useParams();
 
+  const [loading, setLoading] = React.useState(false);
+
   const SearchAI = useAction(api.myAction.search);
+  const saveNotes = useMutation(api.notes.AddNotes);
+  const { user } = useUser();
   const onAiClick = async () => {
-    toast("AI is fetching answer for you...")
+    toast("AI is fetching answer for you...");
+    setLoading(true);
     const slectedText = editor.state.doc.textBetween(
       editor.state.selection.from,
       editor.state.selection.to,
@@ -60,6 +67,13 @@ function EditorExtension({ editor }) {
       AllText + "<p> <strong>Response:</strong> " + FinalAnswer + "</p>",
       false
     );
+    setLoading(false);
+
+    saveNotes({
+      notes: editor.getHTML(),
+      fileId: fileId,
+      createdBy: user?.primaryEmailAddress?.emailAddress || "Anonymous",
+    });
   };
 
   if (!editor) {
@@ -151,11 +165,23 @@ function EditorExtension({ editor }) {
           <button
             onClick={() => onAiClick()}
             className={
-              " bg-gray-100 hover:bg-cyan-500 hover:text-white p-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+              " bg-gray-200 hover:bg-cyan-500 hover:text-white p-2 rounded-md transition-colors duration-200 flex items-center gap-2"
             }
+            disabled={loading}
           >
-            Execute AI
-            <SparklesIcon />
+            {loading ? (
+              <>
+                Executing
+                <span className="animate-spin">
+                  <SparklesIcon />
+                </span>
+              </>
+            ) : (
+              <>
+                Execute
+                <SparklesIcon />
+              </>
+            )}
           </button>
         </div>
       </div>
