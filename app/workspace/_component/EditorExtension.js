@@ -1,3 +1,4 @@
+import { chatSession } from "@/configs/AIModel";
 import { api } from "@/convex/_generated/api";
 import { useAction } from "convex/react";
 import {
@@ -16,20 +17,49 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
+import { toast } from "sonner";
 
 function EditorExtension({ editor }) {
   const { fileId } = useParams();
 
   const SearchAI = useAction(api.myAction.search);
   const onAiClick = async () => {
+    toast("AI is fetching answer for you...")
     const slectedText = editor.state.doc.textBetween(
       editor.state.selection.from,
       editor.state.selection.to,
       " "
     );
-    console.log("Selected Text:", slectedText);
     const result = await SearchAI({ query: slectedText, fileId: fileId });
-    console.log("Unformatted answer:", result);
+
+    const UnformattedAnswer = JSON.parse(result);
+
+    let AllUnformattedAnswer = "";
+    UnformattedAnswer &&
+      UnformattedAnswer.forEach((item) => {
+        AllUnformattedAnswer += item.pageContent;
+      });
+
+    const PROMPT =
+      "For Question: " +
+      slectedText +
+      " ans with given content as answer, please give appropriate answer in HTML format. The answer content is: " +
+      AllUnformattedAnswer;
+
+    const AiModelResult = await chatSession.sendMessage(PROMPT);
+    console.log("AI Model Result:", AiModelResult.response.text());
+    const FinalAnswer = AiModelResult.response
+      .text()
+      .replace("```", "")
+      .replace("```", "")
+      .replace("html", "");
+
+    const AllText = editor.getHTML();
+
+    editor.commands.setContent(
+      AllText + "<p> <strong>Response:</strong> " + FinalAnswer + "</p>",
+      false
+    );
   };
 
   if (!editor) {
