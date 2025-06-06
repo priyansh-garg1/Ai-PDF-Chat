@@ -47,11 +47,25 @@ function EditorExtension({ editor }) {
         AllUnformattedAnswer += item.pageContent;
       });
 
-    const PROMPT =
-      "For Question: " +
-      slectedText +
-      " ans with given content as answer, please give appropriate answer in HTML format. The answer content is: " +
-      AllUnformattedAnswer;
+   const PROMPT = `
+You are a factual and reliable AI assistant.
+
+Use only the information provided in "The answer content" below to answer the question.  
+⚠️ Do not use prior knowledge or external information.  
+⚠️ Do not make assumptions or add any extra content.  
+⚠️ If the answer is not found in the content, reply with: "⚠️The answer is not available in the provided content. Provide more context or details for a better response."
+
+Please return your answer in **detailed HTML format**.
+
+For Question: ${slectedText}
+
+The answer content is:
+========================
+${AllUnformattedAnswer}
+========================
+
+Provide an appropriate, complete, and accurate answer in HTML only:
+`;
 
     const AiModelResult = await chatSession.sendMessage(PROMPT);
     console.log("AI Model Result:", AiModelResult.response.text());

@@ -13,13 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, UploadIcon } from "lucide-react";
 import { useAction, useMutation } from "convex/react";
 import uuid4 from "uuid4";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
+import { toast } from "sonner";
 
-function UploadPdfDialog({ children }) {
+function UploadPdfDialog({ children ,isMaxFile }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -70,13 +71,20 @@ function UploadPdfDialog({ children }) {
     setLoading(false);
     setOpen(false);
     setFile(null);
+
+    toast.success("File uploaded successfully!");
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button onClick={() => setOpen(true)} className="w-full">
-          Upload PDF File
+        <Button disabled={isMaxFile} onClick={() => setOpen(true)} className="w-full">
+          {isMaxFile ? 
+          "Max files reached"
+           : (<div className="flex items-center gap-2">
+            <UploadIcon />
+            <h4>Upload PDF File</h4>
+           </div>)}
         </Button>
       </DialogTrigger>
       <DialogContent>

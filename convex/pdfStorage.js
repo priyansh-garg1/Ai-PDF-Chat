@@ -46,7 +46,26 @@ export const getFileRecord = query({
       .query("pdfFiles")
       .filter((q) => q.eq(q.field("fileId"), args.fileId))
       .collect();
-      
+
     return result[0];
+  },
+});
+
+export const getAllFiles = query({
+  args: {
+    userEmail: v.string().optional(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userEmail) {
+      return;
+    }
+    const result = await ctx.db
+      .query("pdfFiles")
+      .filter((q) => q.eq(q.field("createdBy"), args.userEmail))
+      .collect();
+
+    return result.sort(
+      (a, b) => Number(b._creationTime) - Number(a._creationTime)
+    );
   },
 });
