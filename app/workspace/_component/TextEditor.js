@@ -8,11 +8,10 @@ import Highlight from "@tiptap/extension-highlight";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
-function TextEditor({fileId}) {
-
-  const notes = useQuery(api.notes.GetNotes,{
+function TextEditor({ fileId }) {
+  const notes = useQuery(api.notes.GetNotes, {
     fileId: fileId,
-  })
+  });
 
   const editor = useEditor({
     extensions: [
@@ -21,7 +20,7 @@ function TextEditor({fileId}) {
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
-      Highlight.configure({ multicolor: true })
+      Highlight.configure({ multicolor: true }),
     ],
     editorProps: {
       attributes: {
@@ -30,7 +29,6 @@ function TextEditor({fileId}) {
     },
   });
 
-
   React.useEffect(() => {
     if (editor && notes) {
       editor.commands.setContent(notes);
@@ -38,7 +36,9 @@ function TextEditor({fileId}) {
   }, [editor, notes]);
 
   return (
-    <div>
+    <div className="pt-2">
+      <h2 className="text-xl text-center border-2  bg-gray-100 rounded-4xl">Select Text To Execute AI</h2>
+
       <EditorExtension editor={editor} />
       <div className="overflow-scroll h-[88vh]">
         <EditorContent editor={editor} />

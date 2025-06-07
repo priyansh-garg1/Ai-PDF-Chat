@@ -14,6 +14,7 @@ import {
   Heading3Icon,
   HighlighterIcon,
   Italic,
+  SaveIcon,
   SparklesIcon,
   UnderlineIcon,
 } from "lucide-react";
@@ -25,6 +26,7 @@ function EditorExtension({ editor }) {
   const { fileId } = useParams();
 
   const [loading, setLoading] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const SearchAI = useAction(api.myAction.search);
   const saveNotes = useMutation(api.notes.AddNotes);
@@ -47,12 +49,10 @@ function EditorExtension({ editor }) {
         AllUnformattedAnswer += item.pageContent;
       });
 
-   const PROMPT = `
+    const PROMPT = `
 You are a factual and reliable AI assistant.
 
 Use only the information provided in "The answer content" below to answer the question.  
-⚠️ Do not use prior knowledge or external information.  
-⚠️ Do not make assumptions or add any extra content.  
 ⚠️ If the answer is not found in the content, reply with: "⚠️The answer is not available in the provided content. Provide more context or details for a better response."
 
 Please return your answer in **detailed HTML format**.
@@ -90,11 +90,23 @@ Provide an appropriate, complete, and accurate answer in HTML only:
     });
   };
 
+  const onSave = async () => {
+    setIsSaving(true);
+    const AllText = editor.getHTML();
+    await saveNotes({
+      notes: AllText,
+      fileId: fileId,
+      createdBy: user?.primaryEmailAddress?.emailAddress || "Anonymous",
+    });
+    setIsSaving(false);
+    toast.success("Notes saved successfully!");
+  };
+
   if (!editor) {
     return null;
   }
   return (
-    <div className="p-5">
+    <div className="px-5 py-2">
       <div className="control-group">
         <div className="button-group flex gap-3">
           <button
@@ -194,6 +206,22 @@ Provide an appropriate, complete, and accurate answer in HTML only:
               <>
                 Execute
                 <SparklesIcon />
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => onSave()}
+            className={
+              " bg-black text-white cursor-pointer p-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+            }
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>Saving</>
+            ) : (
+              <>
+                <SaveIcon />
+                Save
               </>
             )}
           </button>
