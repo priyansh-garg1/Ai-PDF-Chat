@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 function Dashboard() {
-  const { user } = useUser();
+  const { user,isLoaded } = useUser();
   const router = useRouter();
 
   useEffect(() => {
+    if (!isLoaded) return;
     if (!user) {
       router.replace("/");
     }
