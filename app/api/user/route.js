@@ -16,8 +16,6 @@ export async function POST(req) {
         fullName: data.userName,
         email: data.email,
         imageUrl: data.imageUrl,
-        // Since we are using AuthContext/Clerk, we might not need a password here if it's social login
-        // But the model says it's required. I'll provide a dummy one if it's missing or update the model.
         password: Math.random().toString(36).slice(-10), 
       });
       await user.save();

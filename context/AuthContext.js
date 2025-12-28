@@ -91,11 +91,9 @@ export const useAuth = () => {
   return context;
 };
 
-// For compatibility with useUser from Clerk (used in multiple places)
 export const useUser = () => {
   const { user, isLoaded } = useAuth();
   
-  // Map our user object to what Clerk useUser returns (approximately)
   const mappedUser = user ? {
     id: user.id,
     fullName: user.fullName,

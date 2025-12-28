@@ -23,7 +23,7 @@ export async function GET(req) {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.NEXT_PUBLIC_JWT_SECRET);
     if (!decoded) {
       return new Response(JSON.stringify({ message: "Invalid token" }), {
         status: 401,

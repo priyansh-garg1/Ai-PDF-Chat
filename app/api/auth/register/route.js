@@ -10,6 +10,7 @@ export async function POST(req) {
     const { email, password, fullName, phoneNo } = await req.json();
 
     if (!email || !password || !fullName) {
+      console.error("Missing fields:", { email, fullName, hasPassword: !!password });
       return new Response(
         JSON.stringify({ message: "Missing required fields" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -39,7 +40,7 @@ export async function POST(req) {
     // Create JWT
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
+      process.env.NEXT_PUBLIC_JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -71,9 +72,9 @@ export async function POST(req) {
       }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Registration error details:", error);
     return new Response(
-      JSON.stringify({ message: "Internal server error" }),
+      JSON.stringify({ message: "Internal server error: " + error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
