@@ -34,6 +34,5 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/workspace/:path*',
-    // Add other protected paths here
   ],
 };
