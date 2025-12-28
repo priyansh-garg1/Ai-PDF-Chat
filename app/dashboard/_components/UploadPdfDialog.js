@@ -12,128 +12,192 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
-import { Loader2Icon, UploadIcon } from "lucide-react";
-import { useAction, useMutation } from "convex/react";
+import { Loader2Icon, UploadIcon, FileText, X } from "lucide-react";
 import uuid4 from "uuid4";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/context/AuthContext";
+import { useFiles } from "@/context/FileContext";
 import axios from "axios";
 import { toast } from "sonner";
 
-function UploadPdfDialog({ children ,isMaxFile }) {
+function UploadPdfDialog({ children, isMaxFile }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [open, setOpen] = useState(false);
 
   const { user } = useUser();
-
-  const generateUploadUrl = useMutation(api.pdfStorage.generateUploadUrl);
-  const addPdfFile = useMutation(api.pdfStorage.AddPdfFile);
-  const getFileUrl = useMutation(api.pdfStorage.getFileUrl);
-  const embeddDocument = useAction(api.myAction.ingest);
+  const { refreshFiles } = useFiles();
 
   const onFileSelect = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
+      setFileName(selectedFile.name.replace(".pdf", ""));
     }
   };
 
   const onUpload = async (e) => {
     setLoading(true);
-    const postUrl = await generateUploadUrl();
-    const result = await fetch(postUrl, {
-      method: "POST",
-      headers: { "Content-Type": file?.type },
-      body: file,
-    });
-    const { storageId } = await result.json();
-    const fileUrl = await getFileUrl({
-      storageId: storageId,
-    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const fileId = uuid4();
-    const response = await addPdfFile({
-      fileId: fileId,
-      storageId: storageId,
-      fileName: fileName || "Untitled PDF",
-      fileUrl: fileUrl,
-      createdBy: user?.primaryEmailAddress?.emailAddress,
-    });
+      const uploadRes = await axios.post("/api/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-    const ApiResponse = await axios.get("/api/pdf-loader?pdfUrl=" + fileUrl);
-    embeddDocument({
-      splitText: ApiResponse.data.result,
-      fileId: fileId,
-    });
+      const { fileUrl, storageId } = uploadRes.data;
+      const fileId = uuid4();
 
-    setLoading(false);
-    setOpen(false);
-    setFile(null);
+      await axios.post("/api/pdf-file", {
+        fileId: fileId,
+        storageId: storageId,
+        fileName: fileName || file.name || "Untitled PDF",
+        fileUrl: fileUrl,
+        createdBy: user?.primaryEmailAddress?.emailAddress,
+      });
 
-    toast.success("File uploaded successfully!");
+      const ApiResponse = await axios.get(
+        "/api/pdf-loader?pdfUrl=" + window.location.origin + fileUrl
+      );
+
+      await axios.post("/api/ingest", {
+        splitText: ApiResponse.data.result,
+        fileId: fileId,
+      });
+
+      setLoading(false);
+      setOpen(false);
+      setFile(null);
+      setFileName("");
+
+      await refreshFiles();
+
+      toast.success("PDF uploaded and ready to use");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      setOpen(false);
+      setFile(null);
+      setFileName("");
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={isMaxFile} onClick={() => setOpen(true)} className="w-full">
-          {isMaxFile ? 
-          "Max files reached"
-           : (<div className="flex items-center gap-2">
-            <UploadIcon />
-            <h4>Upload PDF File</h4>
-           </div>)}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload PDF File</DialogTitle>
-          <DialogDescription>Select a PDF file to upload</DialogDescription>
+          <DialogTitle className="text-lg font-semibold">
+            Upload a PDF
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600">
+            We'll process your document so you can ask questions about it.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="space-y-4 py-4">
           <div>
-            <h2 className="">Choose a file</h2>
-            <div className="flex gap-2 p-3 rounded-xl border">
-              <div className="border p-2 bg-gray-100 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Choose file
+            </label>
+            
+            {!file ? (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-200 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <UploadIcon className="w-8 h-8 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600">
+                    Click to select a PDF
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Max size: 10MB
+                  </p>
+                </div>
                 <input
                   type="file"
+                  className="hidden"
                   accept="application/pdf"
                   onChange={onFileSelect}
+                  disabled={loading}
                 />
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <FileText className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                {!loading && (
+                  <button
+                    onClick={() => {
+                      setFile(null);
+                      setFileName("");
+                    }}
+                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                )}
               </div>
-            </div>
+            )}
           </div>
 
-          <div>
-            <label className="block mb-1">File Name</label>
-            <Input
-              placeholder="Enter file name"
-              onChange={(e) => setFileName(e.target.value)}
-            />
-          </div>
+          {file && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Name this document
+                <span className="text-gray-500 font-normal ml-1">
+                  (optional)
+                </span>
+              </label>
+              <Input
+                placeholder="e.g., Research Paper 2024"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                disabled={loading}
+                className="text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1.5">
+                This helps you find it later.
+              </p>
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="sm:justify-end mt-4">
-          <DialogClose asChild>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={loading}
-              onClick={() => setOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogClose>
+        <DialogFooter className="gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={loading}
+            className="text-sm"
+          >
+            Cancel
+          </Button>
           <Button
             onClick={onUpload}
-            type="submit"
-            className="ml-2"
             disabled={!file || loading}
+            className="text-sm bg-gray-900 hover:bg-gray-800"
           >
-            {loading ? <Loader2Icon className="animate-spin" /> : "Upload"}
+            {loading ? (
+              <>
+                <Loader2Icon className="animate-spin mr-2" size={16} />
+                Processing...
+              </>
+            ) : (
+              "Upload"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

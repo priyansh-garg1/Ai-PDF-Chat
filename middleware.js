@@ -1,16 +1,39 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)'])
+const protectedRoutes = ['/dashboard', '/workspace'];
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect()
-})
+export async function middleware(req) {
+  const { pathname } = req.nextUrl;
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isProtectedRoute) {
+    const token = req.cookies.get('auth_token')?.value;
+
+    if (!token) {
+      return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
+
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      await jwtVerify(token, secret);
+      return NextResponse.next();
+    } catch (error) {
+      console.error('JWT verification failed:', error);
+      return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    '/dashboard/:path*',
+    '/workspace/:path*',
+    // Add other protected paths here
   ],
-}
+};

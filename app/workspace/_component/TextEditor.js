@@ -1,46 +1,72 @@
+"use client";
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import EditorExtension from "./EditorExtension";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import axios from "axios";
 
 function TextEditor({ fileId }) {
-  const notes = useQuery(api.notes.GetNotes, {
-    fileId: fileId,
-  });
+  const [notes, setNotes] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await axios.get(`/api/notes?fileId=${fileId}`);
+        setNotes(response.data);
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (fileId) {
+      fetchNotes();
+    }
+  }, [fileId]);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: "Start Taking your notes here" }),
+      Placeholder.configure({ 
+        placeholder: "Write your notes here…",
+        emptyEditorClass: "is-editor-empty",
+      }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
-      Highlight.configure({ multicolor: true }),
+      Highlight.configure({ multicolor: false }),
     ],
     editorProps: {
       attributes: {
-        class: "focus:outline-none h-screen p-5",
+        class: "focus:outline-none prose prose-sm max-w-none px-6 py-4 min-h-full",
       },
     },
+    immediatelyRender: false,
   });
 
-  React.useEffect(() => {
-    if (editor && notes) {
+  useEffect(() => {
+    if (editor && notes && !loading) {
       editor.commands.setContent(notes);
     }
-  }, [editor, notes]);
+  }, [editor, notes, loading]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-sm text-gray-500">Loading notes...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="pt-2">
-      <h2 className="text-xl text-center border-2  bg-gray-100 rounded-4xl">Select Text To Execute AI</h2>
+    <div className="flex flex-col h-full">
+      <EditorExtension editor={editor} fileId={fileId} />
 
-      <EditorExtension editor={editor} />
-      <div className="overflow-scroll h-[88vh]">
+      <div className="flex-1 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
     </div>

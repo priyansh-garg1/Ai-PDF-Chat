@@ -1,24 +1,31 @@
 import {
   GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
 } from "@google/generative-ai";
 
 const apiKey = process.env.NEXT_PUBLIC_GENAI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("NEXT_PUBLIC_GENAI_API_KEY is not set in environment variables");
+}
+
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Export the genAI instance to create models as needed
+export const generativeAI = genAI;
 
-const generationConfig = {
-  temperature: 1,
-  topP: 0.95,
-  topK: 40,
-  maxOutputTokens: 1024,
-  responseMimeType: "text/plain",
-};
+// Helper function to generate content
+export async function generateAIResponse(prompt) {
+  try {
+    // User verified that models/gemini-flash-latest works
+    const model = genAI.getGenerativeModel({ 
+      model: "models/gemini-flash-latest",
+    });
 
-export const chatSession = model.startChat({
-  generationConfig,
-  history: [],
-});
-
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("AI Generation Error:", error);
+    throw error;
+  }
+}
