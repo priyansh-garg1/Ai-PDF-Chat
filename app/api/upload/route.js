@@ -14,32 +14,21 @@ export async function POST(req) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Save to public/uploads
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     
-    // Ensure directory exists
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (err) {
-      // Ignore if exists
-    }
-
-    const fileName = `${uuid4()}-${file.name}`;
-    const filePath = path.join(uploadDir, fileName);
+    const base64 = buffer.toString('base64');
+    const mimeType = file.type || 'application/pdf';
+    const fileUrl = `data:${mimeType};base64,${base64}`;
     
-    await writeFile(filePath, buffer);
-    
-    const fileUrl = `/uploads/${fileName}`;
-    const storageId = fileName; // Using filename as storageId
+    const fileName = file.name;
+    const storageId = uuid4();
 
     return NextResponse.json({ 
       fileUrl, 
       storageId, 
-      fileName: file.name 
+      fileName 
     });
   } catch (error) {
-    console.error("Error uploading file:", error);
-    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
+    console.error("Error processing file:", error);
+    return NextResponse.json({ error: "Failed to process file" }, { status: 500 });
   }
 }

@@ -57,9 +57,9 @@ function UploadPdfDialog({ children, isMaxFile }) {
         createdBy: user?.primaryEmailAddress?.emailAddress,
       });
 
-      const ApiResponse = await axios.get(
-        "/api/pdf-loader?pdfUrl=" + window.location.origin + fileUrl
-      );
+      const ApiResponse = await axios.post("/api/pdf-loader", {
+        pdfUrl: fileUrl
+      });
 
       await axios.post("/api/ingest", {
         splitText: ApiResponse.data.result,

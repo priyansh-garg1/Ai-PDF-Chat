@@ -16,7 +16,7 @@ const PdfFileSchema = new mongoose.Schema({
   },
   fileUrl: {
     type: String,
-    required: true
+    required: true,
   },
   createdBy: {
     type: String, // email

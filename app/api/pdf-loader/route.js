@@ -2,12 +2,8 @@ import { NextResponse } from 'next/server';
 import { WebPDFLoader } from "@langchain/community/document_loaders/web/pdf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
-export async function GET(req) {
-
-    const reqUrl = req.url;
-    const {searchParams} = new URL(reqUrl);
-    const pdfUrl = searchParams.get("pdfUrl");
-    console.log(pdfUrl);
+export async function POST(req) {
+    const { pdfUrl } = await req.json();
     
     const response = await fetch(pdfUrl);
     const data = await response.blob();
